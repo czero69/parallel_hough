@@ -8,6 +8,9 @@
 class EyeDescriptor
 {
 public:
+	unsigned threadsNum;
+	float lastExecutionTime;
+
 	EyeDescriptor(const cv::Mat& mat);
 	~EyeDescriptor();
 
@@ -20,6 +23,7 @@ public:
 	int* accummulator;
 
 private:
+
 	void gradientsobel(const cv::Mat& mat);
 	void mythreshold(cv::Mat src, cv::Mat &dst, int thresh);
 	int width;
@@ -32,16 +36,17 @@ private:
 	int rwidth;
 	double rdelta;
 
-
 	double omin;
-	double omax; // max angle value
-	int ostepnumb; //how much step does the hough transform angle have
+	double omax; 	// max angle value
+	int ostepnumb; 	//how much step does the hough transform angle have
 	int owidth;
 	double odelta;
 
 	double* si,* ci;
 
 	int houghmaxval;
+
+	void mainHough(cv::Mat& dst);
 
 };
 
