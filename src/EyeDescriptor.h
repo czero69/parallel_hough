@@ -30,19 +30,19 @@ private:
 	int height;
 	int * localGradient_angles;
 
-	double rmin;
-	double rmax;
+	float rmin;
+	float rmax;
 	int rstepnumb;
 	int rwidth;
-	double rdelta;
+	float rdelta;
 
-	double omin;
-	double omax; 	// max angle value
+	float omin;
+	float omax; 	// max angle value
 	int ostepnumb; 	//how much step does the hough transform angle have
 	int owidth;
-	double odelta;
+	float odelta;
 
-	double* si,* ci;
+	float* si,* ci;
 
 	int houghmaxval;
 

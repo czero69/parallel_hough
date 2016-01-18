@@ -57,7 +57,9 @@ void EyeDescriptor::mainHough(cv::Mat& dst) {
 			
 			if (tmp > houghmaxval) {
 				houghmaxval = tmp;
+#pragma omp atomic write
 				x_maxval = x0;
+#pragma omp atomic write
 				y_maxval = y0;
 
 				int value = int(std::abs(r)+0.5);

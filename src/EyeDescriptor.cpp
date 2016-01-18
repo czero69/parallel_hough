@@ -19,13 +19,13 @@ EyeDescriptor::EyeDescriptor(const cv::Mat& mat)
 	owidth = ostepnumb;
 	odelta = (omax - omin) / ostepnumb;
 	
-	rmin = -sqrt(double(pow(width, 2) + pow(height, 2)))/2;
-	rmax =  sqrt(double(pow(width, 2) + pow(height, 2)))/2;
+	rmin = -sqrt(float(pow(width, 2) + pow(height, 2)))/2;
+	rmax =  sqrt(float(pow(width, 2) + pow(height, 2)))/2;
 	rstepnumb = int(rmax - rmin)/2/rdelta;
 	rwidth = rstepnumb;
 
-	si = (double*)malloc(ostepnumb*sizeof(double));
-	ci = (double*)malloc(ostepnumb*sizeof(double));
+	si = (float*)malloc(ostepnumb*sizeof(float));
+	ci = (float*)malloc(ostepnumb*sizeof(float));
 
 
 	for (int i = 0; i < ostepnumb; i++)
@@ -108,7 +108,7 @@ void EyeDescriptor::HoughCircle(const cv::Mat& src, cv::Mat& dst){
 }
 
 void EyeDescriptor::gradientsobel(const cv::Mat& mat){
-	double threshold = 2;
+	float threshold = 2;
 
 #ifdef _DEBUG
 	cv::Mat matGX = cv::Mat(mat.rows, mat.cols, CV_8UC1, cvScalar(0));
@@ -118,18 +118,18 @@ void EyeDescriptor::gradientsobel(const cv::Mat& mat){
 	for (int y = 1; y < mat.rows - 1; y++)
 		for (int x = 1; x < mat.cols - 1; x++)
 		{
-			double convF[3] = { +0.5, 0, -0.5 }; //flipped, poprawiono blad konwolucja jest teraz z lustrzanym odbiciem kernela
+			float convF[3] = { +0.5, 0, -0.5 }; //flipped, poprawiono blad konwolucja jest teraz z lustrzanym odbiciem kernela
 
-			double GX = convF[0] * mat.at<uchar>(y, x - 1) + convF[1] * mat.at<uchar>(y, x) + convF[2] * mat.at<uchar>(y, x + 1);
-			double GY = convF[0] * mat.at<uchar>(y - 1, x) + convF[1] * mat.at<uchar>(y, x) + convF[2] * mat.at<uchar>(y + 1, x);
+			float GX = convF[0] * mat.at<uchar>(y, x - 1) + convF[1] * mat.at<uchar>(y, x) + convF[2] * mat.at<uchar>(y, x + 1);
+			float GY = convF[0] * mat.at<uchar>(y - 1, x) + convF[1] * mat.at<uchar>(y, x) + convF[2] * mat.at<uchar>(y + 1, x);
 
 #ifdef _DEBUG
 			matGX.at<uchar>(y, x) = uchar(std::abs(GX) * 10);
 			matGY.at<uchar>(y, x) = uchar(std::abs(GY) * 10);
 #endif
 
-			double G = std::abs(GX) + std::abs(GY); //edge strenght 
-			double angle = atan2(GY, GX); //return value [-pi,+pi]
+			float G = std::abs(GX) + std::abs(GY); //edge strenght 
+			float angle = atan2(GY, GX); //return value [-pi,+pi]
 
 			int quantized_angle = int((angle + M_PI) / (2 * M_PI) * ostepnumb + 0.5);
 			if (quantized_angle == ostepnumb) 

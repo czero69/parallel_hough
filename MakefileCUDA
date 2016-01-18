@@ -1,0 +1,17 @@
+include cuda.md
+INCLUDE_OPENCV := -I/opt/local/include
+LIBRARY_OPENCV := -L/opt/local/lib
+FLAGS_OPENCV := -lopencv_imgproc -lopencv_imgcodecs -lopencv_calib3d -lopencv_core -lopencv_features2d -lopencv_flann -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc -lopencv_ml -lopencv_objdetect -lopencv_photo -lopencv_shape -lopencv_stitching -lopencv_superres -lopencv_ts -lopencv_video -lopencv_videoio -lopencv_videostab
+
+
+
+all: bin/houghCUDA
+
+bin/houghCUDA: build/EyeDescriptor.o build/main.o build/MainHoughCUDA.o
+	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) $(FLAGS_OPENCV) -o $@ $+ $(LIBRARIES) $(LIBRARY_OPENCV)
+
+build/%.o: src/%.cpp
+	$(EXEC) $(NVCC) -I$(CUDA_PATH)/samples/common/inc $(INCLUDE_OPENCV) $(ALL_LDFLAGS) $(GENCODE_FLAGS) $(FLAGS_OPENCV) -o $@ -c $<;
+
+build/%.o: src/%.cu
+	$(EXEC) $(NVCC) -I$(CUDA_PATH)/samples/common/inc $(INCLUDE_OPENCV) $(ALL_LDFLAGS) $(GENCODE_FLAGS) $(FLAGS_OPENCV) -o $@ -c $<;
