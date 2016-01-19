@@ -90,7 +90,7 @@ void EyeDescriptor::HoughCircle(const cv::Mat& src, cv::Mat& dst){
 	cv::imwrite("wyniki\\5.png", dst);
 #endif
 
-	//cv::Canny(dst, dst, 60, 200); //@TODO replace, gradient calc is already here!
+	cv::Canny(dst, dst, 60, 200); //@TODO replace, gradient calc is already here!
 
 #ifdef _DEBUG 
 	cv::imshow("Canny", dst); // Show our image inside it.

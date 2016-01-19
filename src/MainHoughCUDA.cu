@@ -59,7 +59,8 @@ static void kernelCPU(
 		if (!(x0>=0 && x0 < width && y0>=0 && y0 < height))
 			continue;
 		
-		++accummulator[x0 + y0*width + ri*height*width];
+		atomicAdd(&accummulator[x0 + y0*width + ri*height*width], 1);
+		// ++accummulator[x0 + y0*width + ri*height*width];
 	}
 }
 
@@ -123,7 +124,8 @@ void EyeDescriptor::mainHough(cv::Mat& dst) {
 	*/
 	checkCudaErrors(cudaMemcpy(d_edgesIdx, edgesIdx, 							SIZEI(NPixelsEdges*2), 			cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_localGradient_angles, localGradient_angles, 	SIZEI(height*width), 			cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(d_accummulator, accummulator, 					SIZEI(height*width*rstepnumb), 	cudaMemcpyHostToDevice));
+	//checkCudaErrors(cudaMemcpy(d_accummulator, accummulator, 					SIZEI(height*width*rstepnumb), 	cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemset(d_accummulator, 0, SIZEI(height*width*rstepnumb)));
 	checkCudaErrors(cudaMemcpy(d_si, si, 										SIZEF(ostepnumb), 				cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_ci, ci, 										SIZEF(ostepnumb), 				cudaMemcpyHostToDevice));
 
@@ -167,11 +169,11 @@ void EyeDescriptor::mainHough(cv::Mat& dst) {
 	/*
 		Transfer data from GPU to CPU
 	*/
-	checkCudaErrors(cudaMemcpy(edgesIdx, d_edgesIdx,  							SIZEI(NPixelsEdges*2), 			cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(localGradient_angles, d_localGradient_angles,  	SIZEI(height*width), 			cudaMemcpyDeviceToHost));
+	// checkCudaErrors(cudaMemcpy(edgesIdx, d_edgesIdx,  							SIZEI(NPixelsEdges*2), 			cudaMemcpyDeviceToHost));
+	// checkCudaErrors(cudaMemcpy(localGradient_angles, d_localGradient_angles,  	SIZEI(height*width), 			cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(accummulator, d_accummulator,  					SIZEI(height*width*rstepnumb), 	cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(si, d_si,  										SIZEF(ostepnumb), 				cudaMemcpyDeviceToHost));
-	checkCudaErrors(cudaMemcpy(ci, d_ci,  										SIZEF(ostepnumb), 				cudaMemcpyDeviceToHost));
+	// checkCudaErrors(cudaMemcpy(si, d_si,  										SIZEF(ostepnumb), 				cudaMemcpyDeviceToHost));
+	// checkCudaErrors(cudaMemcpy(ci, d_ci,  										SIZEF(ostepnumb), 				cudaMemcpyDeviceToHost));
 
 	/*
 		Synchronize

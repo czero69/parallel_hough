@@ -21,8 +21,6 @@ void EyeDescriptor::mainHough(cv::Mat& dst) {
 	int NPixelsEdges = (int) edgesIdx.size();
 	int* pixelsDone = new int[threadsNum]();
 
-	sdkStopTimer(&timer);
-
 #pragma omp parallel for num_threads(this->threadsNum), schedule (static)
 	for (int ipixel = 0; ipixel < NPixelsEdges; ++ipixel)
 	{
@@ -57,8 +55,8 @@ void EyeDescriptor::mainHough(cv::Mat& dst) {
 		}
 	}
 
-	// sdkStopTimer(&timer);
-
+	sdkStopTimer(&timer);
+	// sdkStartTimer(&timer);
 	int max = 0; 
 	x_maxval = 0;
 	y_maxval = 0;
@@ -75,6 +73,7 @@ void EyeDescriptor::mainHough(cv::Mat& dst) {
 				}
 			}
 	houghmaxval = max;
+	// sdkStopTimer(&timer);
 
 	for (int i = 0; i < threadsNum; ++i)
 	{
