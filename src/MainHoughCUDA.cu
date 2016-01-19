@@ -11,8 +11,8 @@
 #define SIZEI(x) (sizeof(int)*(x))
 
 
-
-void kernelCPU(
+__global__
+static void kernelCPU(
 	int ipixel,
 
 	int height,
@@ -38,7 +38,7 @@ void kernelCPU(
 	float* ci
 ) 
 {
-	// int ipixel = threadIdx.x + blockIdx.x*blockDim.x;
+	int ipixel = threadIdx.x + blockIdx.x*blockDim.x;
 	if ( ipixel >= NPixelsEdges ) return; 
 
 
@@ -54,7 +54,7 @@ void kernelCPU(
 	for (double r = rmin; r < rmax; r += rdelta)
 	{
 		int eps = 40;
-		if (std::abs(r) < eps)
+		if (abs(r) < eps)
 			continue;
 		
 		int ri = int(((r - rmin) / (rmax - rmin))*rstepnumb);
@@ -73,7 +73,7 @@ void kernelCPU(
 			maxval[0] = tmp;
 			maxval[1] = x0;
 			maxval[2] = y0;
-			maxval[3] = int(std::abs(r)+0.5);
+			maxval[3] = int(abs(r)+0.5);
 		}
 	}
 }
@@ -104,8 +104,7 @@ void EyeDescriptor::mainHough(cv::Mat& dst) {
 
 
 	/*
-		Prepare inputs
-			maxval
+		Cast data to flat memory
 	*/
 	int maxval[4];
 	maxval[0]=houghmaxval;
@@ -134,52 +133,70 @@ void EyeDescriptor::mainHough(cv::Mat& dst) {
 	float* d_si;
 	float* d_ci;
 
-	// checkCudaErrors(cudaMalloc((void **) &d_edgesIdx, 							SIZEI(NPixelsEdges)));
-	// checkCudaErrors(cudaMalloc((void **) &d_localGradient_angles, 				SIZEI(height*width)));
-	// checkCudaErrors(cudaMalloc((void **) &d_accummulator, 						SIZEI(height*width*rstepnumb)));
-	// checkCudaErrors(cudaMalloc((void **) &d_maxval, 							SIZEI(4)));
-	// checkCudaErrors(cudaMalloc((void **) &d_si, 								SIZEF(ostepnumb)));
-	// checkCudaErrors(cudaMalloc((void **) &d_ci, 								SIZEF(ostepnumb)));
+	/*
+		Alloc memory on GPU
+	*/
+	checkCudaErrors(cudaMalloc((void **) &d_edgesIdx, 							SIZEI(NPixelsEdges)));
+	checkCudaErrors(cudaMalloc((void **) &d_localGradient_angles, 				SIZEI(height*width)));
+	checkCudaErrors(cudaMalloc((void **) &d_accummulator, 						SIZEI(height*width*rstepnumb)));
+	checkCudaErrors(cudaMalloc((void **) &d_maxval, 							SIZEI(4)));
+	checkCudaErrors(cudaMalloc((void **) &d_si, 								SIZEF(ostepnumb)));
+	checkCudaErrors(cudaMalloc((void **) &d_ci, 								SIZEF(ostepnumb)));
 
-	// checkCudaErrors(cudaMemcpy(d_edgesIdx, edgesIdx, 							SIZEF(NPixelsEdges), 			cudaMemcpyHostToDevice));
-	// checkCudaErrors(cudaMemcpy(d_localGradient_angles, localGradient_angles, 	SIZEF(height*width), 			cudaMemcpyHostToDevice));
-	// checkCudaErrors(cudaMemcpy(d_accummulator, accummulator, 					SIZEF(height*width*rstepnumb), 	cudaMemcpyHostToDevice));
-	// checkCudaErrors(cudaMemcpy(d_maxval, maxval, 								SIZEF(4), 						cudaMemcpyHostToDevice));
-	// checkCudaErrors(cudaMemcpy(d_si, si, 										SIZEF(ostepnumb), 				cudaMemcpyHostToDevice));
-	// checkCudaErrors(cudaMemcpy(d_ci, ci, 										SIZEF(ostepnumb), 				cudaMemcpyHostToDevice));
+	/*
+		Transfer data from CPU to GPU
+	*/
+	checkCudaErrors(cudaMemcpy(d_edgesIdx, edgesIdx, 							SIZEF(NPixelsEdges), 			cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(d_localGradient_angles, localGradient_angles, 	SIZEF(height*width), 			cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(d_accummulator, accummulator, 					SIZEF(height*width*rstepnumb), 	cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(d_maxval, maxval, 								SIZEF(4), 						cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(d_si, si, 										SIZEF(ostepnumb), 				cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(d_ci, ci, 										SIZEF(ostepnumb), 				cudaMemcpyHostToDevice));
 
 	/*
 		call KERNEL
 	*/
-	for (int ipixel = 0; ipixel < NPixelsEdges; ++ipixel)
-	{
-		kernelCPU(
-			ipixel,
+	int K = 512;
+	kernelCPU <<<(NPixelsEdges+K-1)/K, K>>> (
+		ipixel,
 
-			height,
-			width,
+		height,
+		width,
 
-			edgesIdx,
-			NPixelsEdges,
+		edgesIdx,
+		NPixelsEdges,
 
-			localGradient_angles,
+		localGradient_angles,
 
-			rmin,
-			rmax,
-			rdelta,
-			rstepnumb,
+		rmin,
+		rmax,
+		rdelta,
+		rstepnumb,
 
-			accummulator,
-			maxval,
+		accummulator,
+		maxval,
 
-			si,
-			ci
-		);
-	}
-	
+		si,
+		ci
+	);
 
 	/*
-		Cast outputs to curr data model;
+		Transfer data from GPU to CPU
+	*/
+	checkCudaErrors(cudaMemcpy(edgesIdx, d_edgesIdx,  							SIZEF(NPixelsEdges), 			cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(localGradient_angles, d_localGradient_angles,  	SIZEF(height*width), 			cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(accummulator, d_accummulator,  					SIZEF(height*width*rstepnumb), 	cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(maxval, d_maxval,  								SIZEF(4), 						cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(si, d_si,  										SIZEF(ostepnumb), 				cudaMemcpyDeviceToHost));
+	checkCudaErrors(cudaMemcpy(ci, d_ci,  										SIZEF(ostepnumb), 				cudaMemcpyDeviceToHost));
+
+	/*
+		Synchronize
+	*/
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	/*
+		Cast data from flat memory to C++ classess model;
 	*/
 	houghmaxval=maxval[0];
 	x_maxval=maxval[1];
