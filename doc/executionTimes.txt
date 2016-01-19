@@ -2,9 +2,12 @@
 ~175
 
 
-[version 1]
-174.35 		1
-110.855 	2
-75.243 		4
-68.268 		8
-65.256 		16
+[version openMP]
+627.989   		1 CPU threads
+383.402   		2 CPU threads
+226.49   		4 CPU threads
+186.238   		8 CPU threads
+175.647 		16 CPU threads
+
+[version CUDA]
+567.029		89.1696		65094 CUDA threads

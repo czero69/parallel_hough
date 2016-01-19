@@ -17,7 +17,7 @@ using namespace cv;
 using namespace std;
 
 #define __OPENMP_MEASURE__
-#define __CHECK_CORRECTNESS__
+//#define __CHECK_CORRECTNESS__
 
 
 

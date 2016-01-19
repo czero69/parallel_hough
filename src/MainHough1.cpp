@@ -21,6 +21,8 @@ void EyeDescriptor::mainHough(cv::Mat& dst) {
 	int NPixelsEdges = (int) edgesIdx.size();
 	int* pixelsDone = new int[threadsNum]();
 
+	sdkStopTimer(&timer);
+
 #pragma omp parallel for num_threads(this->threadsNum), schedule (static)
 	for (int ipixel = 0; ipixel < NPixelsEdges; ++ipixel)
 	{
@@ -52,30 +54,34 @@ void EyeDescriptor::mainHough(cv::Mat& dst) {
 			
 #pragma omp atomic update
 			++(accummulator[x0 + y0*width + ri*height*width]);
-
-			int tmp = this->accummulator[x0 + y0*width + ri*height*width];
-			
-			if (tmp > houghmaxval) {
-				houghmaxval = tmp;
-#pragma omp atomic write
-				x_maxval = x0;
-#pragma omp atomic write
-				y_maxval = y0;
-
-				int value = int(std::abs(r)+0.5);
-
-#pragma omp atomic write
-				this->r_maxval = value;
-			}
 		}
 	}
-	
+
+	// sdkStopTimer(&timer);
+
+	int max = 0; 
+	x_maxval = 0;
+	y_maxval = 0;
+	r_maxval = 0;
+	for (int ix = 0; ix < width; ++ix)
+		for (int iy = 0; iy < height; ++iy)
+			for (int ir = 0; ir < rstepnumb; ++ir)
+			{
+				if (accummulator[ix + iy*width + ir*height*width] > max) {
+					max = accummulator[ix + iy*width + ir*height*width];
+					x_maxval = ix; 
+					y_maxval = iy;
+					r_maxval = std::abs(ir*(rmax - rmin)/rstepnumb + rmin);
+				}
+			}
+	houghmaxval = max;
+
 	for (int i = 0; i < threadsNum; ++i)
 	{
 		std::cout << "\tPixelsMade by thread" << i << ": " << pixelsDone[i] << std::endl;
 	}
 	
-	sdkStopTimer(&timer);
+	// sdkStopTimer(&timer);
 	float execution_time = sdkGetTimerValue(&timer);
 	this->lastExecutionTime = execution_time;
 	std::cout << "Main loop, THREADS_NUM: " << threadsNum << " TIME: " << execution_time << "[ms]" << std::endl << std::endl;
